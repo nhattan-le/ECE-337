@@ -31,4 +31,19 @@ for(i = 0; i <= BIT_WIDTH - 1; i = i + 1)
 endgenerate
 assign overflow = carrys[BIT_WIDTH];
 
+always @ (a[0], b[0], carrys[0])
+begin
+   assert(((a[0] + b[0] + carrys[0]) % 2) == sum[0]) begin
+     $info("index 0 sum is correct!");
+   end
+   else begin
+     $error("Input 'b' is not a digital logic Value");
+   end
+end
+always @ (a[0], b[0])
+begin
+   assert((a[0] == 1'b0) || (a[0] == 1'b1) && (b[0] == 1'b0) || (b[0] == 1'b1))
+   else $error("Inputs 'a' & 'b' are not a digital logic Value");
+end
+
 endmodule

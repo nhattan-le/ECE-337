@@ -53,7 +53,8 @@ adder_16bit DUT (.a(tb_a), .b(tb_b), .carry_in(tb_carry_in), .sum(tb_sum), .over
 initial begin
   // Create the test-vector array with enough slots for test cases
   // STUDENT TODO: Update the array declaration to have enough slots
-  tb_test_cases = new[1];
+  tb_test_cases = new[5];
+
 
   // First Test Case/Test-Vector
   tb_test_cases[0].test_name = "Zeros Check";
@@ -62,6 +63,27 @@ initial begin
   tb_test_cases[0].test_cin  = 1'b0;
 
   // STUDENT TODO: Add your additional test cases here after increasing the array size
+  tb_test_cases[1].test_name = "A Large: B Small";
+  tb_test_cases[1].test_a    = 16'hFEDC;
+  tb_test_cases[1].test_b    = 16'h0512;
+  tb_test_cases[1].test_cin  = 1'b0;
+
+  tb_test_cases[2].test_name = "B Large: A Small";
+  tb_test_cases[2].test_a    = 16'h01A4;
+  tb_test_cases[2].test_b    = 16'hFB97;
+  tb_test_cases[2].test_cin  = 1'b0;
+  
+  tb_test_cases[3].test_name = "A Large: B Large";
+  tb_test_cases[3].test_a    = 16'h92B1;
+  tb_test_cases[3].test_b    = 16'hB821;
+  tb_test_cases[3].test_cin  = 1'b1;
+
+  tb_test_cases[4].test_name = "A Small: B Small";
+  tb_test_cases[4].test_a    = 16'h1EBC;
+  tb_test_cases[4].test_b    = 16'h59A1;
+  tb_test_cases[4].test_cin  = 1'b1;
+
+
 end
 
 // Handle expected results bit-slice mappings
