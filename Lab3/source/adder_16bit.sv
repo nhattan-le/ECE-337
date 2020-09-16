@@ -19,10 +19,24 @@ module adder_16bit
 
 adder_nbit #(16) ADD16(.a(a), .b(b), .carry_in(carry_in), .sum(sum), .overflow(overflow));
 
-always @ (a[0], b[0])
+
+genvar i;
+
+generate 
+for(i = 0; i <= 15; i = i + 1) 
 begin
-   assert((a[0] == 1'b0) || (a[0] == 1'b1) && (b[0] == 1'b0) || (b[0] == 1'b1))
-   else $error("Inputs 'a' & 'b' are not a digital logic Value");
+   always @ (a[i], b[i]) begin
+      assert((a[i] == 1'b0) || (a[i] == 1'b1) && (b[i] == 1'b0) || (b[i] == 1'b1))
+      else $error("Inputs 'a' & 'b' are not a digital logic Value");
+   end
 end
+endgenerate
+
+always @ (carry_in)
+begin
+   assert((carry_in == 1'b0) || (carry_in == 1'b1))
+   else $error("Input carry_in is not a digital logic Value");
+end
+
 
 endmodule

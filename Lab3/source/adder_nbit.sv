@@ -27,23 +27,23 @@ generate
 for(i = 0; i <= BIT_WIDTH - 1; i = i + 1)
   begin
     adder_1bit  IX (.a(a[i]), .b(b[i]), .carry_in(carrys[i]), .sum(sum[i]), .carry_out(carrys[i + 1]));
+    always @ (a[i], b[i], carrys[i]) begin
+      assert((a[i] == 1'b0) || (a[i] == 1'b1) && (b[i] == 1'b0) || (b[i] == 1'b1))
+      else $error("Inputs 'a' & 'b' are not a digital logic Value");
+      assert(((a[i] + b[i] + carrys[i]) % 2) == sum[i])
+      else $error("Output s of bit i is not correct");
+      assert(((a[i] + b[i] + carrys[i]) / 2) == carrys[i+1])
+      else $error("Output c_out of bit i is not correct");   
+    end
   end
 endgenerate
 assign overflow = carrys[BIT_WIDTH];
 
-always @ (a[0], b[0], carrys[0])
+
+always @ (carry_in)
 begin
-   assert(((a[0] + b[0] + carrys[0]) % 2) == sum[0]) begin
-     $info("index 0 sum is correct!");
-   end
-   else begin
-     $error("Input 'b' is not a digital logic Value");
-   end
-end
-always @ (a[0], b[0])
-begin
-   assert((a[0] == 1'b0) || (a[0] == 1'b1) && (b[0] == 1'b0) || (b[0] == 1'b1))
-   else $error("Inputs 'a' & 'b' are not a digital logic Value");
+   assert((carry_in == 1'b0) || (carry_in == 1'b1))
+   else $error("Input carry_in is not a digital logic Value");
 end
 
 endmodule

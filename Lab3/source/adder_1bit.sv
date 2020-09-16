@@ -32,10 +32,10 @@ OR2X1 U4(.A(a), .B(b), .Y(or_ab));
 AND2X1 U5(.A(or_ab), .B(carry_in), .Y(abc2));
 OR2X1 U6(.A(abc), .B(abc2), .Y(carry_out));
 
-always @ (a, b)
+always @ (a, b, carry_in)
 begin
-   assert((a == 1'b0) || (a == 1'b1) && (b == 1'b0) || (b == 1'b1))
-   else $error("Inputs 'a' & 'b' are not a digital logic Value");
+   assert((a == 1'b0) || (a == 1'b1) && (b == 1'b0) || (b == 1'b1) && (carry_in == 1'b0) || (carry_in == 1'b1))
+   else $error("Inputs 'a' & 'b' & 'carry_in' are not a digital logic Value");
 end
 
 endmodule
