@@ -22,6 +22,7 @@ module flex_counter
 
 reg [(NUM_CNT_BITS - 1):0] counter;
 wire [(NUM_CNT_BITS - 1):0] nxt_count;
+wire nxt_flag; 
 
 always_ff @ (posedge clk, negedge n_rst) 
 begin
@@ -39,7 +40,10 @@ begin
 end
 
 
-assign nxt_count = (rollover_val == counter ? 'h0 : (counter + 'h1));
-assign rollover_flag = (counter == rollover_val);
+assign nxt_count = (rollover_val == counter ? 'h1 : (counter + 'h1));
+
+assign nxt_flag = (counter == rollover_val);
+assign count_out = counter;
+assign rollover_flag = nxt_flag;
 
 endmodule
