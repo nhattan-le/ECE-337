@@ -22,7 +22,7 @@ module rcu
 localparam IDLE = 2'b00;
 localparam FRAME_START = 2'b01;
 localparam PACKET_DONE = 2'b10;
-localparam ERROR_FRAME = 2'b11;
+localparam ERROR_FRAME_CHECK = 2'b11;
 
 reg [1:0] state;
 reg [1:0] next_state;
@@ -54,18 +54,11 @@ always_comb begin
    end
    PACKET_DONE:
    begin
-      if(framing_error) begin
-         next_state = ERROR_FRAME;
-      end
-      else begin
-         next_state = IDLE;
-      end
+      next_state = ERROR_FRAME_CHECK;
    end
-   ERROR_FRAME:
+   ERROR_FRAME_CHECK:
    begin
-      if(start_bit_detected) begin
-         next_state = FRAME_START;
-      end
+      next_state = IDLE;
    end
    default:
    begin
@@ -102,21 +95,19 @@ always_comb begin
       sbc_clear = 1'b0;
       sbc_enable = 1'b1;
       enable_timer = 1'b1;
+      load_buffer = 1'b0;
+   end
+   ERROR_FRAME_CHECK:
+   begin
+      sbc_clear = 1'b0;
+      sbc_enable = 1'b0;
+      enable_timer = 1'b0;
       if(!framing_error) begin
          load_buffer = 1'b1;
       end
       else begin
          load_buffer = 1'b0;
       end
-   end
-   ERROR_FRAME:
-   begin
-      if(start_bit_detected) begin
-         sbc_clear = 1'b1;
-      end
-      sbc_enable = 1'b0;
-      load_buffer = 1'b0;
-      enable_timer = 1'b0;
    end
    default:
    begin
