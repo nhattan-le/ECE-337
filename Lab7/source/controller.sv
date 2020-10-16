@@ -39,30 +39,51 @@ localparam ADD2 = 5'b01100;
 localparam MUL4 = 5'b01101;
 localparam SUB2 = 5'b01110;
 localparam EIDLE = 5'b01111;
-localparam STORE_LC = 5'b10000;
+
+localparam STORE_F0 = 5'b10000;
+localparam WAIT_F1 = 5'b10001;
+localparam STORE_F1 = 5'b10010;
+localparam WAIT_F2 = 5'b10011;
+localparam STORE_F2 = 5'b10100;
+localparam WAIT_F3 = 5'b10101;
+localparam STORE_F3 = 5'b10110;
+
+
 
 reg [4:0] state;
 reg [4:0] next_state;
 reg [1:0] lc_count;
 reg lc_delay;
 reg modwait_int;
-flex_counter #2 LC_COUNT(.clk(clk), .n_rst(n_rst), .count_enable(lc_delay), .clear(), .count_out(lc_count), .rollover_val(2'b11), .rollover_flag());
+reg [2:0] op_int;
+reg [3:0] src1_int;
+reg [3:0] src2_int;
+reg [3:0] dest_int;
+reg err_int;
+reg cnt_up_int;
+reg clear_int;
 
-always_ff @ (posedge clk, negedge n_rst) begin
-    if(n_rst == 1'b0) begin
-        lc_delay <= 1'b0;
-    end
-    else begin
-       lc_delay <= lc;
-    end
-end
 
 always_ff @ (posedge clk, negedge n_rst) begin
     if(n_rst == 1'b0) begin
         modwait <= 1'b0;
+        op <= 3'b000;
+        src1 <= 4'b0000;
+        src2 <= 4'b0000;
+        dest <= 4'b0000;
+        err <= 1'b0;
+        cnt_up <= 1'b0;
+        clear <= 1'b0;
     end
     else begin
        modwait <= modwait_int;
+       op <= op_int;
+       src1 <= src1_int;
+       src2 <= src2_int;
+       dest <= dest_int;
+       err <= err_int;
+       cnt_up <= cnt_up_int;
+       clear <= clear_int;
     end
 end
 
@@ -82,12 +103,55 @@ always_comb begin
    IDLE:
    begin
       if(lc) begin
-         next_state = STORE_LC;
+         next_state = STORE_F0;
       end
       else if(dr) begin 
          next_state = STORE;
       end
    end
+   STORE_F0:
+   begin
+      if(!lc) begin
+          next_state = WAIT_F1;
+      end
+   end
+   WAIT_F1:
+   begin
+      if(lc) begin
+          next_state = STORE_F1;
+      end
+   end
+   STORE_F1:
+   begin
+       if(!lc) begin
+           next_state = WAIT_F2;
+       end
+   end
+   WAIT_F2:
+   begin
+      if(lc) begin
+          next_state = STORE_F2;
+      end
+   end
+   STORE_F2:
+   begin
+       if(!lc) begin
+           next_state = WAIT_F3;
+       end
+   end
+   WAIT_F3:
+   begin
+      if(lc) begin
+          next_state = STORE_F3;
+      end
+   end
+   STORE_F3:
+   begin
+      if(!lc) begin
+          next_state = IDLE;
+      end
+   end
+   
    STORE:
    begin
       if(dr) begin 
@@ -97,15 +161,7 @@ always_comb begin
          next_state = EIDLE;
       end
    end
-   STORE_LC:
-   begin
-      if(!lc) begin 
-         next_state = IDLE;
-      end
-      else begin
-         next_state = EIDLE;
-      end
-   end
+
    ZERO: 
    begin
       next_state = SORT1;
@@ -196,192 +252,215 @@ always_comb begin
 end
 
 always_comb begin
-   op = 3'b000;
-   src1 = 4'b0000;
-   src2 = 4'b0000;
-   dest = 4'b0000;
+   op_int = 3'b000;
+   src1_int = 4'b0000;
+   src2_int = 4'b0000;
+   dest_int = 4'b0000;
+   err_int = 1'b0;
+   cnt_up_int = 1'b0;
+   clear_int = 1'b0;
    modwait_int = 1'b0;
-   err = 1'b0;
 
-   case(state)
+   case(next_state)
    IDLE:
    begin
-      op = 3'b000;
-      src1 = 4'b0000;
-      src2 = 4'b0000;
-      dest = 4'b0000;
+      op_int = 3'b000;
+      src1_int = 4'b0000;
+      src2_int = 4'b0000;
+      dest_int = 4'b0000;
+      err_int = 1'b0;
       modwait_int = 1'b0;
-      err = 1'b0;
    end
+   STORE_F0:
+   begin
+      op_int = 3'b011;
+      dest_int = 4'b0111;
+      modwait_int = 1'b1;
+   end
+   WAIT_F1:
+   begin
+      op_int = 3'b000;
+      dest_int = 4'b0000;
+      modwait_int = 1'b0;
+   end
+   STORE_F1:
+   begin
+      op_int = 3'b011;
+      dest_int = 4'b1000;
+      modwait_int = 1'b1;
+   end
+   WAIT_F2:
+   begin
+      op_int = 3'b000;
+      dest_int = 4'b0000;
+      modwait_int = 1'b0;
+   end
+   STORE_F2:
+   begin
+      op_int = 3'b011;
+      dest_int = 4'b1001;
+      modwait_int = 1'b1;
+   end
+   WAIT_F3:
+   begin
+      op_int = 3'b000;
+      dest_int = 4'b0000;
+      modwait_int = 1'b0;
+   end
+   STORE_F3:
+   begin
+      op_int = 3'b011;
+      dest_int = 4'b1010;
+      modwait_int = 1'b1;
+      clear_int = 1'b1;
+   end
+   
    STORE:
    begin 
-      op = 3'b010;
-      src1 = 4'b0000;
-      src2 = 4'b0000;
-      dest = 4'b0101;
+      op_int = 3'b010;
+      src1_int = 4'b0000;
+      src2_int = 4'b0000;
+      dest_int = 4'b0101;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
-   end
-   STORE_LC:
-   begin
-      op = 3'b011;
-      src1 = 4'b0000;
-      src2 = 4'b0000;
-      case(lc_count)
-      2'b00:
-      begin
-         dest = 4'b0111;
-      end
-      2'b01:
-      begin
-         dest = 4'b1000;
-      end
-      2'b10:
-      begin
-         dest = 4'b1001;
-      end
-      2'b11:
-      begin
-         dest = 4'b1010;
-      end
-      endcase
-      modwait_int = 1'b1;
-      err = 1'b0;
    end
    ZERO: 
    begin 
-      op = 3'b101;
-      src1 = 4'b0000;
-      src2 = 4'b0000;
-      dest = 4'b0000;
+      op_int = 3'b101;
+      src1_int = 4'b0000;
+      src2_int = 4'b0000;
+      dest_int = 4'b0000;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    SORT1: 
    begin 
-      op = 3'b001;
-      src1 = 4'b0010;
-      src2 = 4'b0000;
-      dest = 4'b0001;
+      op_int = 3'b001;
+      src1_int = 4'b0010;
+      src2_int = 4'b0000;
+      dest_int = 4'b0001;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    SORT2: 
    begin 
-      op = 3'b001;
-      src1 = 4'b0011;
-      src2 = 4'b0000;
-      dest = 4'b0010;
+      op_int = 3'b001;
+      src1_int = 4'b0011;
+      src2_int = 4'b0000;
+      dest_int = 4'b0010;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    SORT3: 
    begin 
-      op = 3'b001;
-      src1 = 4'b0100;
-      src2 = 4'b0000;
-      dest = 4'b0011;
+      op_int = 3'b001;
+      src1_int = 4'b0100;
+      src2_int = 4'b0000;
+      dest_int = 4'b0011;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    SORT4: 
    begin 
-      op = 3'b001;
-      src1 = 4'b0101;
-      src2 = 4'b0000;
-      dest = 4'b0100;
+      op_int = 3'b001;
+      src1_int = 4'b0101;
+      src2_int = 4'b0000;
+      dest_int = 4'b0100;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    MUL1: 
    begin 
-      op = 3'b110;
-      src1 = 4'b0001;
-      src2 = 4'b1010;
-      dest = 4'b0110;
+      op_int = 3'b110;
+      src1_int = 4'b0001;
+      src2_int = 4'b1010;
+      dest_int = 4'b0110;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    ADD1: 
    begin 
-      op = 3'b100;
-      src1 = 4'b0000;
-      src2 = 4'b0110;
-      dest = 4'b0000;
+      op_int = 3'b100;
+      src1_int = 4'b0000;
+      src2_int = 4'b0110;
+      dest_int = 4'b0000;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    MUL2: 
    begin 
-      op = 3'b110;
-      src1 = 4'b0010;
-      src2 = 4'b1001;
-      dest = 4'b0110;
+      op_int = 3'b110;
+      src1_int = 4'b0010;
+      src2_int = 4'b1001;
+      dest_int = 4'b0110;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    SUB1: 
    begin 
-      op = 3'b101;
-      src1 = 4'b0000;
-      src2 = 4'b0110;
-      dest = 4'b0000;
+      op_int = 3'b101;
+      src1_int = 4'b0000;
+      src2_int = 4'b0110;
+      dest_int = 4'b0000;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    MUL3: 
    begin 
-      op = 3'b110;
-      src1 = 4'b0011;
-      src2 = 4'b1000;
-      dest = 4'b0110;
+      op_int = 3'b110;
+      src1_int = 4'b0011;
+      src2_int = 4'b1000;
+      dest_int = 4'b0110;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    ADD2: 
    begin 
-      op = 3'b100;
-      src1 = 4'b0000;
-      src2 = 4'b0110;
-      dest = 4'b0000;
+      op_int = 3'b100;
+      src1_int = 4'b0000;
+      src2_int = 4'b0110;
+      dest_int = 4'b0000;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    MUL4: 
    begin 
-      op = 3'b110;
-      src1 = 4'b0100;
-      src2 = 4'b0111;
-      dest = 4'b0110;
+      op_int = 3'b110;
+      src1_int = 4'b0100;
+      src2_int = 4'b0111;
+      dest_int = 4'b0110;
+      err_int = 1'b0;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    SUB2: 
    begin 
-      op = 3'b101;
-      src1 = 4'b0000;
-      src2 = 4'b0110;
-      dest = 4'b0000;
+      op_int = 3'b101;
+      src1_int = 4'b0000;
+      src2_int = 4'b0110;
+      dest_int = 4'b0000;
+      err_int = 1'b0;
+      cnt_up_int = 1'b1;
       modwait_int = 1'b1;
-      err = 1'b0;
    end
    EIDLE: 
    begin 
-      op = 3'b000;
-      src1 = 4'b0000;
-      src2 = 4'b0000;
-      dest = 4'b0000;
+      op_int = 3'b000;
+      src1_int = 4'b0000;
+      src2_int = 4'b0000;
+      dest_int = 4'b0000;
+      err_int = 1'b1;
       modwait_int = 1'b0;
-      err = 1'b1;
    end
    default:
    begin
-      op = 3'b000;
-      src1 = 4'b0000;
-      src2 = 4'b0000;
-      dest = 4'b0000;
+      op_int = 3'b000;
+      src1_int = 4'b0000;
+      src2_int = 4'b0000;
+      dest_int = 4'b0000;
+      err_int = 1'b0;
+      cnt_up_int = 1'b0;
+      clear_int = 1'b0;
       modwait_int = 1'b0;
-      err = 1'b0;
    end
    endcase
 end

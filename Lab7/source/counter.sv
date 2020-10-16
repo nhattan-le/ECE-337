@@ -14,7 +14,8 @@ module counter
    input wire clear,
    output reg one_k_samples
 );
+wire [9:0] count;
 
-flex_counter #10 ONE_K (.clk(clk), .n_rst(n_rst), .count_enable(cnt_up), .clear(clear), .count_out(), .rollover_val(10'd1000), .rollover_flag(one_k_samples));
-
+flex_counter #10 ONE_K (.clk(clk), .n_rst(n_rst), .count_enable(cnt_up & (count < 10'd1000)), .clear(clear), .count_out(count), .rollover_val(10'd1000), .rollover_flag());
+assign one_k_samples = count == 10'd1000;
 endmodule
