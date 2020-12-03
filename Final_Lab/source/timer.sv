@@ -10,20 +10,28 @@ module timer
 (
   input wire clk,
   input wire n_rst,
-  input wire enable_timer,
-  output wire shift_enable,
-  output wire packet_done
+  input wire d_stuff,
+  input wire d_edge,
+  input wire idle,
+  output reg shift_enable,
+  output reg shift_enable2,
+  output reg byte_received
 );
-wire [3:0] shift_count;
-wire [3:0] bit_count;
-wire shift_en_int;
+reg [3:0] shift_count;
+reg enable_4;
+reg first_stage_en;
+reg shift_enable_int;
+reg byte_received_int;
+reg byte_received_ff;
 
-flex_counter shift_cnt(.clk(clk), .n_rst(n_rst), .clear(!enable_timer), .count_enable(enable_timer), .rollover_val(4'd10), .count_out(shift_count), .rollover_flag());
-assign shift_en_int = shift_count == 4'd3;
 
 
 
-flex_counter packet_done_cnt(.clk(clk), .n_rst(n_rst), .clear(!enable_timer), .count_enable(shift_en_int), .rollover_val(4'd10), .count_out(bit_count), .rollover_flag(packet_done));
-assign shift_enable = bit_count != 4'b0000 ? shift_en_int : 1'b0;
+flex_counter counter_8(.clk(clk), .n_rst(n_rst), .clear(d_edge), .count_enable(!idle), .rollover_val(4'd8), .count_out(shift_count), .rollover_flag());
+assign shift_enable_int  = (shift_count == 4'd3);
+assign shift_enable = ~idle & shift_enable_int;
+assign shift_enable2 = ~idle & shift_enable_int & !d_stuff;
+flex_counter counter_byte(.clk(clk), .n_rst(n_rst), .clear(d_edge&idle), .count_enable(shift_enable2), .rollover_val(4'd8), .count_out(), .rollover_flag(byte_received));
+
 
 endmodule
